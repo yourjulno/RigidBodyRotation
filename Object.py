@@ -10,11 +10,11 @@ from quat import Quaternion
 
 class Object:
 
-    def __int__(self, omega: np.array,
-                moments: np.array,
-                Ixx: float,
-                Iyy: float,
-                Izz: float):
+    def __init__(self, omega: np.array,
+                 moments: np.array,
+                 Ixx: float,
+                 Iyy: float,
+                 Izz: float):
         self.w_x = omega[0]
         self.w_y = omega[1]
         self.w_z = omega[2]
@@ -29,7 +29,7 @@ class Object:
 
     # w/dt = I^-1(M - w x (I*w))
     @staticmethod
-    def dw_dt(self) -> List[float]:
+    def dw_dt(self) -> np.array:
         w_x_dot = (self.Mx - (self.Izz - self.Iyy) * self.w_y * self.w_z) / self.Ixx
         w_y_dot = (self.My - (self.Ixx - self.Izz) * self.w_z * self.w_x) / self.Iyy
         w_z_dot = (self.Mz - (self.Iyy - self.Ixx) * self.w_x * self.w_y) / self.Izz
@@ -40,7 +40,7 @@ class Object:
 
     # q * w = (q0, qx, qy, qz) * (0, wx, wy, wz)^T
     @staticmethod
-    def dq_dt(self, q: Quaternion) -> List[float]:
+    def dq_dt(self, q: Quaternion) -> np.array:
         q_x_dot = 0.5 * q.l_0 * self.w_x + 0.5 * (q.l[1] * self.w_z - q.l[2] * self.w_y)
         q_y_dot = 0.5 * q.l_0 * self.w_y + 0.5 * (q.l[2] * self.w_x - q.l[0] * self.w_z)
         q_z_dot = 0.5 * q.l_0 * self.w_z + 0.5 * (q.l[0] * self.w_y - q.l[1] * self.w_x)
@@ -49,3 +49,13 @@ class Object:
 
         return dq_dt
 
+    @staticmethod
+    def state_vector(self, q: Quaternion) -> np.array:
+        a = self.dq_dt(self, q)
+        b = self.dw_dt(self)
+        state: np.array = ([[a], [b]])
+        # for i in a:
+        #     state.append(i)
+        # for j in b:
+        #     state.append(j)
+        return state

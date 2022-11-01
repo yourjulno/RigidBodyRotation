@@ -5,11 +5,14 @@ import numpy as np
 
 class Runge_Kutta:
     @staticmethod
-    def make_step(self, time: float,
+    def right_function(time: float,
+                       state: np.array) -> np.array:
+        return
+    @staticmethod
+    def make_step(time: float,
                   step: float,
                   state: np.array,
                   func: Callable[[float, np.ndarray], np.ndarray]) -> np.array:
-
         k1 = func(time, state)
         k2 = func(time + step / 2, state + (step / 2) * k1)
         k3 = func(time + step / 2, state + (step / 2) * k2)
@@ -18,7 +21,8 @@ class Runge_Kutta:
         return y
 
     @staticmethod
-    def integrate(self, y0: np.array,
+    def integrate(make_step,
+                  y0: np.array,
                   time_0: float,
                   time_end: float,
                   step: float,
@@ -27,11 +31,9 @@ class Runge_Kutta:
         times: List[float] = [time]
         result: List[np.ndarray] = [y0]
         while time < time_end:
-            result.append(self.make_step(times[-1], step, result[-1], func))
+            result.append(make_step(times[-1], step, result[-1], func))
             time = time + step
             times.append(time)
         return times, result
 
 
-print(2)
-print(3)

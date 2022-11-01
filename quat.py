@@ -4,7 +4,7 @@ from math import sqrt
 
 class Quaternion:
 
-    def __int__(self, l_0: float,
+    def __init__(self, l_0: float,
                 l: np.array):
         self.l_0 = l_0
         self.l = l
@@ -43,4 +43,4 @@ class Quaternion:
         return np.array(self.division(Quaternion(0, vector)).division(self.inv()).l)
 
 
-print(2)
+
