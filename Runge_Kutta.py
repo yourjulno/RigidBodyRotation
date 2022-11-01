@@ -1,13 +1,16 @@
 from typing import Callable, List, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
+from quat import Quaternion
+from Object import Object
 
 
 class Runge_Kutta:
     @staticmethod
-    def right_function(time: float,
-                       state: np.array) -> np.array:
-        return
+    def right_function(obj: Object,
+                       q: Quaternion) -> np.array:
+        return obj.state_vector(obj, q)
+
     @staticmethod
     def make_step(time: float,
                   step: float,
@@ -35,5 +38,3 @@ class Runge_Kutta:
             time = time + step
             times.append(time)
         return times, result
-
-

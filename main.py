@@ -15,6 +15,6 @@
 # print(state)
 # RK = Runge_Kutta
 #
-# step_of_integrate = RK.make_step(5, 1, state, add)
+# step_of_integrate = RK.make_step(5, 1, state, RK.right_function(obj, quaternion))
 # print(RK.integrate(step_of_integrate, [1, 1, 1], 1, 3, 0.5, np.array))
 
