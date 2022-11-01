@@ -38,3 +38,4 @@ class Quaternion:
     # задаётся нормированным кватернионом L по формуле: e_k = L * i_k * L'
     def rotate(self, vector):
         return np.array(self.division(Quaternion(0, vector)).division(self.inv()).l)
+print(2)
