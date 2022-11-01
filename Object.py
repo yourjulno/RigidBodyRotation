@@ -2,26 +2,50 @@ import numpy as np
 from math import sqrt
 from math import cos, sin
 from casadi import *
+from typing import Callable, List, Tuple
+from quat import Quaternion
 
 
 # w/dt
 
+class Object:
 
-def dw_dt_moments(w, m, Ixx, Iyy, Izz):
-    w_x = w[0]
-    w_y = w[1]
-    w_z = w[2]
+    def __int__(self, omega: np.array,
+                moments: np.array,
+                Ixx: float,
+                Iyy: float,
+                Izz: float):
+        self.w_x = omega[0]
+        self.w_y = omega[1]
+        self.w_z = omega[2]
 
-    Mx = m[0]
-    My = m[1]
-    Mz = m[2]
+        self.Mx = moments[0]
+        self.My = moments[1]
+        self.Mz = moments[2]
 
-    w_x_dot = (Mx - (Izz - Iyy) * w_y * w_z) / Ixx
-    w_y_dot = (My - (Ixx - Izz) * w_z * w_x) / Iyy
-    w_z_dot = (Mz - (Iyy - Ixx) * w_x * w_y) / Izz
+        self.Ixx = Ixx
+        self.Iyy = Iyy
+        self.Izz = Izz
 
-    dw_dt = vertcat(w_x_dot, w_y_dot, w_z_dot)
+    # w/dt = I^-1(M - w x (I*w))
+    @staticmethod
+    def dw_dt(self) -> List[float]:
+        w_x_dot = (self.Mx - (self.Izz - self.Iyy) * self.w_y * self.w_z) / self.Ixx
+        w_y_dot = (self.My - (self.Ixx - self.Izz) * self.w_z * self.w_x) / self.Iyy
+        w_z_dot = (self.Mz - (self.Iyy - self.Ixx) * self.w_x * self.w_y) / self.Izz
 
-    return dw_dt
+        dw_dt: List[float] = [w_x_dot, w_y_dot, w_z_dot]
 
-print(dw_dt_moments([1, 0, 1], [0, 1, 1], 1, 1, 1))
+        return dw_dt
+
+    # q * w = (q0, qx, qy, qz) * (0, wx, wy, wz)^T
+    @staticmethod
+    def dq_dt(self, q: Quaternion) -> List[float]:
+        q_x_dot = 0.5 * q.l_0 * self.w_x + 0.5 * (q.l[1] * self.w_z - q.l[2] * self.w_y)
+        q_y_dot = 0.5 * q.l_0 * self.w_y + 0.5 * (q.l[2] * self.w_x - q.l[0] * self.w_z)
+        q_z_dot = 0.5 * q.l_0 * self.w_z + 0.5 * (q.l[0] * self.w_y - q.l[1] * self.w_x)
+        q_w_dot = q.l[0] * self.w_x + q.l[1] * self.w_y + q.l[2] * self.w_z
+        dq_dt: List[float] = [q_x_dot, q_y_dot, q_z_dot, q_w_dot]
+
+        return dq_dt
+

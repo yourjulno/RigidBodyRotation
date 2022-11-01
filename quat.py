@@ -4,11 +4,14 @@ from math import sqrt
 
 class Quaternion:
 
-    def __int__(self, l_0, l):
+    def __int__(self, l_0: float,
+                l: np.array):
         self.l_0 = l_0
-        self.l = np.array(l)
+        self.l = l
 
     def sum_quat(self, other):
+        other: Quaternion
+
         return Quaternion(self.l_0 + other.l_0, np.add(self.l, other.l))
 
     def norm(self):
@@ -18,14 +21,14 @@ class Quaternion:
         return Quaternion(self.l_0 + other.l_0 - self.l.prod(other.l), self.l_0 * other.l + other.l_0 * self.l
                           + np.cross(self.l, other.l))
 
-    def size(self, le):
+    def size(self, le: float):
         self.l_0 = self.l_0 * le
         self.l = le * self.l
         return self
 
     # нормированный кватернион
     def normalize(self):
-        return self.scale(self.norm())
+        return self.size(self.norm())
 
     def inv(self):
         return self.conjugate().normalize()
@@ -36,6 +39,8 @@ class Quaternion:
 
     # произвольное положение твердого тела с неподвижной точкой
     # задаётся нормированным кватернионом L по формуле: e_k = L * i_k * L'
-    def rotate(self, vector):
+    def rotate(self, vector: np.array):
         return np.array(self.division(Quaternion(0, vector)).division(self.inv()).l)
+
+
 print(2)
