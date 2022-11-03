@@ -1,7 +1,13 @@
 from typing import Callable, List, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.animation as animation
+from draw import Drawing_Schema
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib.animation import FuncAnimation
 from math import sqrt, cos, sin, tan, acos
+
+from matplotlib.patches import Ellipse
 from scipy.spatial.transform import Rotation as R
 from dataclasses import dataclass
 from quat import Quaternion
@@ -88,87 +94,100 @@ class Runge_Kutta:
         return times, result
 
 
-initial_cond = np.array([1., 0., 1.0, 0., 0., 1., 0.])
+initial_cond = np.array([0., 1.0, 0.0, 0., 1., 0., 0.])
 step = 0.01
 initial_time = 0
 end_time = 10
-moments = [1, 1, 1]
+moments = [1, 0, 0]
 tensor = [1, 1, 1]
 
 times, states = Runge_Kutta.integrate(initial_cond, initial_time, end_time, step, RightPart(moments, tensor))
 result_of_times = np.array(times)
 result_of_states = np.array(states)
-print(result_of_states)
-print(result_of_times)
-fig = plt.figure()
-ax = plt.axes(projection='3d')
-
-ax.plot(result_of_states[:, 0], result_of_states[:, 1], result_of_states[:, 2])
-
-# plt.show()
 
 
-
-def normalize(vector, tolerance=0.00001):
-    mag2 = sum(n * n for n in vector)
-    if abs(mag2 - 1.0) > tolerance:
-        mag = sqrt(mag2)
-        vector = tuple(n / mag for n in vector)
-    return vector
-def quaternionMult(quaternionOne, quaternionTwo):
-    w1, x1, y1, z1 = quaternionOne
-    w2, x2, y2, z2 = quaternionTwo
-    w = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
-    x = w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2
-    y = w1 * y2 + y1 * w2 + z1 * x2 - x1 * z2
-    z = w1 * z2 + z1 * w2 + x1 * y2 - y1 * x2
-    return w, x, y, z
-
-def quaternionConjugate(quaternion):
-    w, x, y, z = quaternion
-    return (w, -x, -y, -z)
-
-def quaternionvectorProduct(quaternion, vector):
-
-    quaternion2 = (0.0,) + vector
-
-    return quaternionMult(quaternionMult(quaternion, quaternion2), quaternionConjugate(quaternion))[1:]
-# def angletoQuaternion(vector, theta):
-#     vector = normalize(vector)
-#     x, y, z = vector
-#     theta /= 2
-#     w = cos(theta/2.)
-#     x = x * sin(theta/2.)
-#     y = y * sin(theta/2.)
-#     z = z * sin(theta/2.)
-#
-#     return w, x, y, z
-
-# def quaterniontoAngle(quaternion):
-#     w, vector = quaternion[0], quaternion[1:]
-#     theta = acos(w) * 2.0
-#     return normalize(vector), theta
 
 class Motion:
 
     @staticmethod
-    def basis_vectors():
-        e_x = (1, 0, 0)
-        e_y = (0, 1, 0)
-        e_z = (0, 0, 1)
-        vector = (1, 1, 1)
+    def basis_vectors(x, y, z):
         result_of_motion: np.array = []
         for i in range(len(result_of_states)):
-            q = Quaternion(result_of_states[3][i], [result_of_states[0][i], result_of_states[1][i], result_of_states[2][i]])
+            q = Quaternion(result_of_states[i][3], [result_of_states[i][0],
+                                                    result_of_states[i][1], result_of_states[i][2]])
             # q_ = q.conjugate()
             # q_norm = q.normalize()
             # q__norm = q_.normalize()
             # div = quaternionMult(q, q_)
-            rotated_vector = q.rotate(vector)
-            result_of_motion.append(rotated_vector)
+            rotated_vector_x = q.rotate((x, y, z))
+            result_of_motion.append(rotated_vector_x)
 
-        return vector
+        return result_of_motion
+
+
+fig = plt.figure()
+ax = plt.axes(projection='3d')
+x = Motion.basis_vectors(1, 0, 0)
+print(x)
+y = Motion.basis_vectors(0, 1, 0)
+z = Motion.basis_vectors(0, 0, 1)
+
+# ax.plot(c, result_of_times )
+xs = []
+xy = []
+xz = []
+for basis in x:
+    xs.append(basis[0])
+    xy.append(basis[1])
+    xz.append(basis[2])
+ex = None
+# ax.set_xlim([0, 1])
+# ax.set_ylim([0, 1])
+# ax.set_zlim([0, 1])
+for i in range(len(xs)):
+
+    if ex:
+        ex.remove()
+        ey.remove()
+        ez.remove()
+    ex = ax.quiver(0,0,0,x[i][0],x[i][1],x[i][2],color='red')
+    ey = ax.quiver(0,0,0,y[i][0],y[i][1],y[i][2])
+    ez = ax.quiver(0,0,0,z[i][0],z[i][1],z[i][2],color="green")
+    plt.pause(.001)
+
+# sphere = plt.line(axes=ax, view=[-25,12])
 
 
 
-print(Motion.basis_vectors())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# wframe = None
+# for phi in np.linspace(0, 180. / np.pi, 100):
+#     if wframe:
+#         wframe.remove()
+#     wframe = ax.plot(x, y, z)
+#     plt.pause(1)
+
+plt.show()
+# Plot the new wireframe and pause briefly before continuing.
+#     wframe = ax.quiver([0,0,0],[0,0,0],[0,0,0],[b[0],0,0],[0,b[1],0],[0,0,b[2]], colors=cols)
+
+# print(Motion.basis_vectors())

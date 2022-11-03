@@ -51,12 +51,13 @@ class Object:
 
     @staticmethod
     def state_vector(self, q: Quaternion) -> np.array:
+
         a = self.dq_dt(self, q)
         b = self.dw_dt(self)
-        state: np.array = []
+        state: list = []
         print(state)
         for i in a:
-            state.append(i)
+            state.append([i])
         for j in b:
-            state.append(j)
+            state.append([j])
         return state

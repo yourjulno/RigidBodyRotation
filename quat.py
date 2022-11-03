@@ -7,7 +7,7 @@ class Quaternion:
     def __init__(self, l_0: float,
                 l: np.array):
         self.l_0 = l_0
-        self.l = l
+        self.l = np.array(l)
 
     def sum_quat(self, other):
         other: Quaternion
@@ -15,11 +15,11 @@ class Quaternion:
         return Quaternion(self.l_0 + other.l_0, np.add(self.l, other.l))
 
     def norm(self):
-        return sqrt((self.l_0 ** 2 + self.l[0] ** 2 + self.l[1] ** 2 + self.l[2]))
+        return sqrt((self.l_0 ** 2) + (self.l[0] ** 2) + (self.l[1] ** 2) + (self.l[2] **2))
 
     def division(self, other):
-        return Quaternion(self.l_0 + other.l_0 - self.l.prod(other.l), self.l_0 * other.l + other.l_0 * self.l
-                          + np.cross(self.l, other.l))
+        return Quaternion(self.l_0 * other.l_0 - self.l.dot(other.l), self.l * other.l
+                          + other.l_0 * self.l + np.cross(self.l, other.l))
 
     def size(self, le: float):
         self.l_0 = self.l_0 * le
