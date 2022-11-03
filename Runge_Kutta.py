@@ -1,6 +1,8 @@
 from typing import Callable, List, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
+from math import sqrt, cos, sin, tan, acos
+from scipy.spatial.transform import Rotation as R
 from dataclasses import dataclass
 from quat import Quaternion
 from Object import Object
@@ -103,4 +105,70 @@ ax = plt.axes(projection='3d')
 
 ax.plot(result_of_states[:, 0], result_of_states[:, 1], result_of_states[:, 2])
 
-plt.show()
+# plt.show()
+
+
+
+def normalize(vector, tolerance=0.00001):
+    mag2 = sum(n * n for n in vector)
+    if abs(mag2 - 1.0) > tolerance:
+        mag = sqrt(mag2)
+        vector = tuple(n / mag for n in vector)
+    return vector
+def quaternionMult(quaternionOne, quaternionTwo):
+    w1, x1, y1, z1 = quaternionOne
+    w2, x2, y2, z2 = quaternionTwo
+    w = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
+    x = w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2
+    y = w1 * y2 + y1 * w2 + z1 * x2 - x1 * z2
+    z = w1 * z2 + z1 * w2 + x1 * y2 - y1 * x2
+    return w, x, y, z
+
+def quaternionConjugate(quaternion):
+    w, x, y, z = quaternion
+    return (w, -x, -y, -z)
+
+def quaternionvectorProduct(quaternion, vector):
+
+    quaternion2 = (0.0,) + vector
+
+    return quaternionMult(quaternionMult(quaternion, quaternion2), quaternionConjugate(quaternion))[1:]
+# def angletoQuaternion(vector, theta):
+#     vector = normalize(vector)
+#     x, y, z = vector
+#     theta /= 2
+#     w = cos(theta/2.)
+#     x = x * sin(theta/2.)
+#     y = y * sin(theta/2.)
+#     z = z * sin(theta/2.)
+#
+#     return w, x, y, z
+
+# def quaterniontoAngle(quaternion):
+#     w, vector = quaternion[0], quaternion[1:]
+#     theta = acos(w) * 2.0
+#     return normalize(vector), theta
+
+class Motion:
+
+    @staticmethod
+    def basis_vectors():
+        e_x = (1, 0, 0)
+        e_y = (0, 1, 0)
+        e_z = (0, 0, 1)
+        vector = (1, 1, 1)
+        result_of_motion: np.array = []
+        for i in range(len(result_of_states)):
+            q = Quaternion(result_of_states[3][i], [result_of_states[0][i], result_of_states[1][i], result_of_states[2][i]])
+            # q_ = q.conjugate()
+            # q_norm = q.normalize()
+            # q__norm = q_.normalize()
+            # div = quaternionMult(q, q_)
+            rotated_vector = q.rotate(vector)
+            result_of_motion.append(rotated_vector)
+
+        return vector
+
+
+
+print(Motion.basis_vectors())
