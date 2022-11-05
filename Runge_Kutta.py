@@ -118,7 +118,7 @@ class Motion:
 
         return result_of_motion
 
-
+#
 fig = plt.figure()
 ax = plt.axes(projection='3d')
 x = Motion.basis_vectors(1, 0, 0)
