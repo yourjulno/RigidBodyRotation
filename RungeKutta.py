@@ -1,12 +1,13 @@
 from typing import Callable, List, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.patches import FancyArrowPatch
-from mpl_toolkits.mplot3d import proj3d
+
+import pyquaternion
 
 from quat import Quaternion
-from Object import Object
 
+#######################################################################
+# Правая часть уравнения движения q' = 1/2 q * w
 
 class RightPart:
     def __init__(self, moments: np.array,
@@ -35,7 +36,7 @@ class RightPart:
         result[0] = q_x_dot
         q_y_dot = 0.5 * y[3] * y[5] + 0.5 * (y[2] * y[4] - y[0] * y[6])
         result[1] = q_y_dot
-        q_z_dot = 0.5 * y[3] * y[6] + 0.5 * (y[0] * y[5] - y[1] * y[6])
+        q_z_dot = 0.5 * y[3] * y[6] + 0.5 * (y[0] * y[5] - y[1] * y[4])
         result[2] = q_z_dot
         q_w_dot = y[0] * y[4] + y[1] * y[5] + y[2] * y[6]
         result[3] = q_w_dot
@@ -56,7 +57,8 @@ class RightPart:
 
         return state_vector
 
-
+#######################################################
+# Решение диффура 1-ого порядка
 class Runge_Kutta:
 
     @staticmethod
@@ -90,64 +92,41 @@ class Runge_Kutta:
         return times, result
 
 
-initial_cond = np.array([0., 1.0, 0.0, 0., 1., 0., 0.])
+initial_cond = np.array([0., 1., 0., 0., 1., 0., 0.])
 step = 0.01
 initial_time = 0
 end_time = 10
 moments = [1, 1, 1]
 tensor = [1, 1, 1]
 
-times, states = Runge_Kutta.integrate(initial_cond, initial_time, end_time, step, RightPart(moments, tensor))
-result_of_times = np.array(times)
-result_of_states = np.array(states)
-print(result_of_states)
-
-
-class Motion:
-
+################################################################################
+# Возвращает вектор состояния (qw, qx, qy, qz, wx, wy, wz)
+class Res:
     @staticmethod
-    def basis_vectors(x, y, z):
-        result_of_motion: np.array = []
-        for i in range(len(result_of_states)):
-            q = Quaternion(result_of_states[i][3], [result_of_states[i][0],
-                                                    result_of_states[i][1],
-                                                    result_of_states[i][2]])
+    def return_results():
+        times, states = Runge_Kutta.integrate(initial_cond, initial_time, end_time, step, RightPart(moments, tensor))
+        result_of_times = np.array(times)
+        result_of_states = np.array(states)
+        return result_of_states
 
-            rotated_vector_x = q.rotate((x, y, z))
-            result_of_motion.append(rotated_vector_x)
 
-        return result_of_motion
+
+
+
+# class Motion:
+#
+#     @staticmethod
+#     def basis_vectors(v):
+#         result_of_motion: np.array = []
+#         for i in range(len(result_of_states)):
+#             q = Quaternion(result_of_states[i][3], [result_of_states[i][0],
+#                                                     result_of_states[i][1],
+#                                                     result_of_states[i][2]])
+#
+#             rotated_vector_x = q.rotate(v)
+#             result_of_motion.append(rotated_vector_x)
+#
+#         return result_of_motion
 
 #
-fig = plt.figure()
-ax = plt.axes(projection='3d')
-x = Motion.basis_vectors(1, 0, 0)
-print(x)
-y = Motion.basis_vectors(0, 1, 0)
-z = Motion.basis_vectors(0, 0, 1)
 
-
-
-ex = None
-#
-# for i in range(len(x)):
-#     if ex:
-#         ex.remove()
-#     #     ey.remove()
-#     #     ez.remove()
-#     # ex = ax.plot([0, x[i][0]], [0, x[i][1]], [0, x[i][2]], color='red', alpha=0.8, lw=3)
-#     # ex = ax.quiver(x[i][0], x[i][1], x[i][2], 0, 0, 0,  length=0.02)
-#     # ey = ax.quiver(y[i][0], y[i][1], y[i][2], 0, 0, 0, length=0.02)
-#     # ez = ax.quiver(z[i][0], z[i][1], z[i][2], 0, 0, 0, length=0.02)
-#     plt.pause(.001)
-for i in range(len(x)):
-    if ex:
-        ex.remove()
-        ey.remove()
-        ez.remove()
-    ex = ax.plot([0, x[i][0]], [0, x[i][1]], [0, x[i][2]], color='red', alpha=0.8, lw=3)
-    ey = ax.plot([0, y[i][0]], [0, y[i][1]], [0, y[i][2]], color='red', alpha=0.8, lw=3)
-    ez = ax.plot([0, z[i][0]], [0, z[i][1]], [0, z[i][2]], color='red', alpha=0.8, lw=3)
-    plt.pause(.001)
-
-plt.show()
