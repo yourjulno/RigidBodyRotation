@@ -109,7 +109,7 @@ class Res:
         result_of_states = np.array(states)
         return result_of_states
 
-
+print(Res.return_results())
 
 
 
@@ -128,5 +128,4 @@ class Res:
 #
 #         return result_of_motion
 
-#
 
