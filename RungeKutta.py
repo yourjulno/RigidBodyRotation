@@ -3,8 +3,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import pyquaternion
+from pyquaternion import Quaternion
 
-from quat import Quaternion
+
 
 #######################################################################
 # Правая часть уравнения движения q' = 1/2 q * w
@@ -31,31 +32,35 @@ class RightPart:
     @staticmethod
     def calc_of_dq_dt(t: float,
                       y: np.array) -> np.array:
-        result = np.zeros(4)
-        q_x_dot = 0.5 * y[3] * y[4] + 0.5 * (y[1] * y[6] - y[2] * y[5])
-        result[0] = q_x_dot
-        q_y_dot = 0.5 * y[3] * y[5] + 0.5 * (y[2] * y[4] - y[0] * y[6])
-        result[1] = q_y_dot
-        q_z_dot = 0.5 * y[3] * y[6] + 0.5 * (y[0] * y[5] - y[1] * y[4])
-        result[2] = q_z_dot
-        q_w_dot = y[0] * y[4] + y[1] * y[5] + y[2] * y[6]
-        result[3] = q_w_dot
+        q_quat = Quaternion(y[3], y[0], y[1], y[2])
+        q_w = Quaternion(0, y[4], y[5], y[6])
+        result = q_quat*q_w
+        # result = np.zeros(4)
+        # q_x_dot = 0.5 * y[3] * y[4] + 0.5 * (y[1] * y[6] - y[2] * y[5])
+        # result[0] = q_x_dot
+        # q_y_dot = 0.5 * y[3] * y[5] + 0.5 * (y[2] * y[4] - y[0] * y[6])
+        # result[1] = q_y_dot
+        # q_z_dot = 0.5 * y[3] * y[6] + 0.5 * (y[0] * y[5] - y[1] * y[4])
+        # result[2] = q_z_dot
+        # q_w_dot = y[0] * y[4] + y[1] * y[5] + y[2] * y[6]
+        # result[3] = q_w_dot
 
         return result
 
     def func(self, t: float,
              y: np.ndarray,
              ) -> np.array:
-        state_vector = np.zeros(len(y))
+        dot_vector = np.zeros(len(y))
         dw_dt = self.calc_of_dw_dt(t, y)
         dq_dt = self.calc_of_dq_dt(t, y)
 
-        state_vector[0:4] = dq_dt
-        state_vector[4:7] = dw_dt
+        dot_vector[0:4] = dq_dt
+        dot_vector[4:7] = dw_dt
         # for j in state_vector[4:7]:
         #     j = j + dw_dt[j]
 
-        return state_vector
+        return dot_vector
+
 
 #######################################################
 # Решение диффура 1-ого порядка
@@ -92,12 +97,13 @@ class Runge_Kutta:
         return times, result
 
 
-initial_cond = np.array([0., 1., 0., 0., 1., 0., 0.])
+initial_cond = np.array([0.5, 0.5, 0., 0., 1., 1., 1.])
 step = 0.01
 initial_time = 0
-end_time = 10
-moments = [1, 1, 1]
+end_time = 40
+moments = [0, 0, 0]
 tensor = [1, 1, 1]
+
 
 ################################################################################
 # Возвращает вектор состояния (qw, qx, qy, qz, wx, wy, wz)
@@ -109,9 +115,8 @@ class Res:
         result_of_states = np.array(states)
         return result_of_states
 
+
 print(Res.return_results())
-
-
 
 # class Motion:
 #
@@ -127,5 +132,7 @@ print(Res.return_results())
 #             result_of_motion.append(rotated_vector_x)
 #
 #         return result_of_motion
-
-
+q1 = Quaternion(1, 0, 0, 0)
+q2 = Quaternion(0, 1, 0, 0)
+w = Quaternion
+print(q1*q2)
