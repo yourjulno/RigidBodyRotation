@@ -25,7 +25,7 @@ ax.set_xlim((-2, 2))
 ax.set_ylim((-2, 2))
 ax.set_zlim((-2, 2))
 
-ax.view_init(30, 0)
+# ax.view_init(30, 0)
 
 
 def init():
@@ -61,9 +61,10 @@ e3 = [0, 0, 1]
 
 def get_axis_state(q):
 
-        e1 = np.add(0, q.rotate([1, 0, 0]))
-        e2 = np.add(0, q.rotate([0, 1, 0]))
-        e3 = np.add(0, q.rotate([0, 0, 1]))
+        e1 = q.rotate([1, 0, 0])
+        e2 = q.rotate([0, 1, 0])
+        e3 = q.rotate([0, 0, 1])
+
 
         return [e1, e2, e3]
 def update_canvas(canvas, q):
@@ -79,21 +80,18 @@ def update_canvas(canvas, q):
     canvas[1].set_3d_properties([0, e2z])
     canvas[2].set_3d_properties([0, e3z])
     return canvas
+
 def animate(i):
-
-
-
-    q = quats
-    e1,e2,e3 = update_canvas(canvas, q[i])
+    q = next(iterator_quats)
+    e1,e2,e3 = update_canvas(canvas, q)
 
     return e1, e2, e3
 
-animate(0)
+
 interval = None
 t = np.linspace(0,30,1000)
-if interval is None:
-    ani = animation.FuncAnimation(fig, animate, frames=len(t), interval=1000 * t.max() / len(t), blit=blit)
-else:
-    ani = animation.FuncAnimation(fig, animate, frames=len(t), interval=interval / len(t), blit=blit)
+
+ani = animation.FuncAnimation(fig, animate, frames=len(t), interval=1000 * t.max() / len(t), blit=True)
+
 
 plt.show()
