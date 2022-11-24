@@ -19,7 +19,7 @@ class BaseMoment(ABC):
         :return:
         """
 
-
+####
 class ConstatntTorque(BaseMoment):
 
     def __init__(self, const_torque: np.ndarray):
