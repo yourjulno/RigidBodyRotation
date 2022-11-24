@@ -28,7 +28,7 @@ class ConstatntTorque(BaseMoment):
     def calcTorque(self, t: float, y: np.ndarray) -> np.ndarray:
         return self.const_torque
 
-
+#
 #######################################################################
 # Правая часть уравнения движения q' = 1/2 q * w
 
