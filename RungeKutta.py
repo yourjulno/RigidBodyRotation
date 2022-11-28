@@ -1,10 +1,6 @@
 from typing import Callable, List, Tuple
 from abc import ABC, abstractmethod
-import matplotlib.pyplot as plt
-
 import numpy as np
-
-import pyquaternion
 from pyquaternion import Quaternion
 
 
@@ -19,6 +15,7 @@ class BaseMoment(ABC):
         :return:
         """
 
+
 ####
 class ConstatntTorque(BaseMoment):
 
@@ -27,6 +24,7 @@ class ConstatntTorque(BaseMoment):
 
     def calcTorque(self, t: float, y: np.ndarray) -> np.ndarray:
         return self.const_torque
+
 
 #
 #######################################################################
@@ -111,72 +109,53 @@ class Runge_Kutta:
             times.append(time)
         return times, result
 
-
-initial_cond = np.array([0, 0., 0., 1., 0., 1., 0])
-step = 0.003
-initial_time = 0
-end_time = 40
-constant_torque = [0., 0., -1]
-tensor = [2, 2, 1]
-
-c = ConstatntTorque(np.array(constant_torque))
-mom = [c]
-
-
 ################################################################################
 # Возвращает вектор состояния (qw, qx, qy, qz, wx, wy, wz)
 class Res:
 
-    @staticmethod
-    def return_results():
-        times, states = Runge_Kutta.integrate(initial_cond, initial_time, end_time, step, RightPart(mom, tensor))
-        result_of_times = np.array(times)
-        result_of_states = np.array(states)
-        return result_of_states
+    def __init__(self, initial_cond, initial_time, end_time, step, tensor, mom):
+        self.initial_cond = initial_cond
+        self.initial_time = initial_time
+        self.end_time = end_time
+        self.step = step
+        self.tensor = tensor
+        self.mom = mom
+        self.results = []
+        self.times = []
 
+    def return_results_of_state(self):
+        times, states = Runge_Kutta.integrate(self.initial_cond, self.initial_time, self.end_time, self.step,
+                                              RightPart(self.mom, self.tensor))
+        self.results = np.array(states)
+        return self.results
 
-time, state = Runge_Kutta.integrate(initial_cond, initial_time, end_time, step, RightPart(mom, tensor))
-# print(Res.return_results())
-wx = []
-wy = []
-wz = []
-Kx = []
-Ky = []
-Kz = []
-for i in Res.return_results():
-    w_x = i[4]
-    w_y = i[5]
-    w_z = i[6]
-    wx.append(w_x)
-    wy.append(w_y)
-    wz.append(w_z)
-    q = Quaternion(i[3], i[0], i[1], i[2])
-    w = w_x * w_x + w_y * w_y + w_z * w_z
-    K = [w_x * tensor[0], w_y * tensor[1], w_z * tensor[2]]
+    def return_time_(self):
+        times, states = Runge_Kutta.integrate(self.initial_cond, self.initial_time, self.end_time, self.step,
+                                              RightPart(self.mom, self.tensor))
+        self.times = np.array(times)
+        return self.times
 
-    K_rotate = q.rotate(K)
-    Kx.append(K_rotate[0])
-    Ky.append(K_rotate[1])
-    Kz.append(K_rotate[2])
-    # print(K_rotate)
-    # print(w)
-    # print(w_x * w_x * tensor[0] + w_y * w_y * tensor[1] + w_z * w_z * tensor[2])
+    def GetKinTorqueFromResults(self):
+        Kx, Ky, Kz = [], [], []
+        for i in self.return_results_of_state():
+            w_x = i[4]
+            w_y = i[5]
+            w_z = i[6]
+            q = Quaternion(i[3], i[0], i[1], i[2])
+            K = [w_x * self.tensor[0], w_y * self.tensor[1], w_z * self.tensor[2]]
 
-fig, ax = plt.subplots()
+            K_rotate = q.rotate(K)
+            Kx.append(K_rotate[0])
+            Ky.append(K_rotate[1])
+            Kz.append(K_rotate[2])
+        return Kx, Ky, Kz
 
-ax.scatter(time, Kx, color='green', s=5, marker='o')
-ax.scatter(time, Ky, color='blue', s=5, marker='o')
-ax.scatter(time, Kz, color='red', s=5, marker='o')
-
-ax.set_xlabel("time")
-ax.set_ylabel("K")
-ax.minorticks_on()
-# plt.title("T = 50C")
-ax.grid(which='major', linewidth=0.3)
-ax.grid(which="minor", linestyle=':')
-# ax.set(xlim=(14, 17), ylim=(0, 0.4))
-ax.legend()
-plt.savefig('calibration.png')
-
-# print(k[1])
-plt.show()
+    def GetEnergyFromResults(self):
+        T_sum = []
+        for i in self.return_results_of_state():
+            w_x = i[4]
+            w_y = i[5]
+            w_z = i[6]
+            T = self.tensor[0] * w_x * w_x + self.tensor[1] * w_y * w_y + self.tensor[2] * w_z * w_z
+            T_sum.append(T)
+        return np.array(T_sum)
