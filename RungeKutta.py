@@ -17,13 +17,39 @@ class BaseMoment(ABC):
 
 
 ####
-class ConstatntTorque(BaseMoment):
+# class ConstatntTorque(BaseMoment):
+#
+#     def __init__(self, const_torque: np.ndarray):
+#         self.const_torque = const_torque
+#
+#     def calcTorque(self, t: float, y: np.ndarray) -> np.ndarray:
+#         return self.const_torque
 
-    def __init__(self, const_torque: np.ndarray):
-        self.const_torque = const_torque
 
-    def calcTorque(self, t: float, y: np.ndarray) -> np.ndarray:
-        return self.const_torque
+class PID(BaseMoment):
+
+    def __init__(self,
+                 y_end: np.ndarray):
+        self.q_target = Quaternion(y_end[3], y_end[0], y_end[1], y_end[2])
+        self.Kq: float = 0.1
+        self.Kw: float = 0.1
+
+    @staticmethod
+    def get_W(t: float,
+              y: np.ndarray) -> np.array:
+        return [y[4], y[5], y[6]]
+
+    def calcDeltaQuat(self, t: float,
+                      y: np.ndarray) -> Quaternion:
+        delta_quat = self.q_target - Quaternion(y[3], y[0], y[1], y[2])
+        return delta_quat
+
+    def calcTorque(self, t: float,
+                   y: np.ndarray) -> np.ndarray:
+        w_begin = np.zeros(3)
+        torque_t = np.array(self.Kq * self.calcDeltaQuat(t, y).vector + self.Kw * (w_begin - self.get_W(t, y)))
+        # print(torque_t)
+        return torque_t
 
 
 #
@@ -37,17 +63,25 @@ class RightPart:
         self.torque_list = torque_list
         self.tensor = tensor
 
-    def calc_of_dw_dt(self, t: float,
-                      y: np.array) -> np.array:
+    def calc_of_torque_in_different_times(self, t: float,
+                                          y: np.array) -> np.array:
         res_torque = np.zeros(3)
+
         for torque in self.torque_list:
             res_torque += torque.calcTorque(t, y)
+        return res_torque
+
+    def calc_of_dw_dt(self, t: float,
+                      y: np.array) -> np.array:
         result = np.zeros(3)
-        w_x_dot = (res_torque[0] - (self.tensor[2] - self.tensor[1]) * y[5] * y[6]) / self.tensor[0]
+        w_x_dot = (self.calc_of_torque_in_different_times(t, y)[0]
+                   - (self.tensor[2] - self.tensor[1]) * y[5] * y[6]) / self.tensor[0]
         result[0] = w_x_dot
-        w_y_dot = (res_torque[1] - (self.tensor[0] - self.tensor[2]) * y[6] * y[4]) / self.tensor[1]
+        w_y_dot = (self.calc_of_torque_in_different_times(t, y)[1]
+                   - (self.tensor[0] - self.tensor[2]) * y[6] * y[4]) / self.tensor[1]
         result[1] = w_y_dot
-        w_z_dot = (res_torque[2] - (self.tensor[1] - self.tensor[0]) * y[4] * y[5]) / self.tensor[2]
+        w_z_dot = (self.calc_of_torque_in_different_times(t, y)[2]
+                   - (self.tensor[1] - self.tensor[0]) * y[4] * y[5]) / self.tensor[2]
         result[2] = w_z_dot
 
         return result
@@ -105,9 +139,11 @@ class Runge_Kutta:
         result: List[np.ndarray] = [y0]
         while time < time_end:
             result.append(Runge_Kutta.make_step(times[-1], step, result[-1], right_part))
+            # print(result[-1])
             time = time + step
             times.append(time)
         return times, result
+
 
 ################################################################################
 # Возвращает вектор состояния (qw, qx, qy, qz, wx, wy, wz)
@@ -141,6 +177,7 @@ class Res:
             w_x = i[4]
             w_y = i[5]
             w_z = i[6]
+            print(w_x * w_x + w_y * w_y + w_z * w_z)
             q = Quaternion(i[3], i[0], i[1], i[2])
             K = [w_x * self.tensor[0], w_y * self.tensor[1], w_z * self.tensor[2]]
 
@@ -159,3 +196,13 @@ class Res:
             T = self.tensor[0] * w_x * w_x + self.tensor[1] * w_y * w_y + self.tensor[2] * w_z * w_z
             T_sum.append(T)
         return np.array(T_sum)
+
+    @staticmethod
+    def GetWFromResults(y: np.ndarray) -> np.array:
+        W_sum = []
+        for i in y:
+            w_x = i[4]
+            w_y = i[5]
+            w_z = i[6]
+            W_sum.append(w_x ** 2 + w_y ** 2 + w_z ** 2)
+        return np.array(W_sum)
