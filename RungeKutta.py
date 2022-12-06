@@ -2,6 +2,7 @@ from typing import Callable, List, Tuple
 from abc import ABC, abstractmethod
 import numpy as np
 from pyquaternion import Quaternion
+from matplotlib import pyplot as plt
 
 
 class BaseMoment(ABC):
@@ -31,8 +32,8 @@ class PID(BaseMoment):
     def __init__(self,
                  y_end: np.ndarray):
         self.q_target = Quaternion(y_end[3], y_end[0], y_end[1], y_end[2])
-        self.Kq: float = 0.1
-        self.Kw: float = 0.1
+        self.Kq: float = 1
+        self.Kw: float = 1
 
     @staticmethod
     def get_W(t: float,
@@ -41,12 +42,14 @@ class PID(BaseMoment):
 
     def calcDeltaQuat(self, t: float,
                       y: np.ndarray) -> Quaternion:
-        delta_quat = self.q_target - Quaternion(y[3], y[0], y[1], y[2])
+        # delta_quat = self.q_target - Quaternion(y[3], y[0], y[1], y[2])
+        delta_quat = self.q_target*y[0]
         return delta_quat
 
     def calcTorque(self, t: float,
                    y: np.ndarray) -> np.ndarray:
         w_begin = np.zeros(3)
+
         torque_t = np.array(self.Kq * self.calcDeltaQuat(t, y).vector + self.Kw * (w_begin - self.get_W(t, y)))
         # print(torque_t)
         return torque_t
@@ -206,3 +209,55 @@ class Res:
             w_z = i[6]
             W_sum.append(w_x ** 2 + w_y ** 2 + w_z ** 2)
         return np.array(W_sum)
+
+    @staticmethod
+    def GetXQuatComponent(y: np.ndarray) -> np.array:
+        qx = []
+        for i in y:
+            x = i[1]
+
+            qx.append(x)
+
+        return qx
+
+    @staticmethod
+    def GetYQuatComponent(y: np.ndarray) -> np.array:
+        qy = []
+        for i in y:
+            y = i[2]
+
+            qy.append(y)
+
+        return qy
+
+    @staticmethod
+    def GetZQuatComponent(y: np.ndarray) -> np.array:
+        qz = []
+        for i in y:
+            z = i[3]
+
+            qz.append(z)
+
+        return qz
+
+initial_cond = [0., 0, 0, 1, 2, 2, 2]  # начальные условия удовлетворяют случай эйлера
+initial_time = 0
+end_time = 40
+tensor = [2, 2, 1]
+step = 0.002
+initial = np.array([0., 0, 0, 1, 0, 0, 0])
+pid = PID(initial)
+c = [pid]
+Res = Res(initial_cond, initial_time, end_time, step, tensor, c)
+res = Res.return_results_of_state()
+Time = Res.return_time_()
+fig, ax = plt.subplots()
+x = Res.GetXQuatComponent(res)
+y = Res.GetYQuatComponent(res)
+z = Res.GetZQuatComponent(res)
+ax.scatter(Time, x, color='green', s=5, marker='o')
+ax.scatter(Time, y, color='blue', s=5, marker='o')
+ax.scatter(Time, z, color='red', s=5, marker='o')
+ax.legend()
+plt.savefig("calibration.png")
+plt.show()
