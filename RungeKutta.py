@@ -43,7 +43,7 @@ class PID(BaseMoment):
     def calcDeltaQuat(self, t: float,
                       y: np.ndarray) -> Quaternion:
         # delta_quat = self.q_target - Quaternion(y[3], y[0], y[1], y[2])
-        delta_quat = self.q_target*y[0]
+        delta_quat = self.q_target*y[3]
         return delta_quat
 
     def calcTorque(self, t: float,
@@ -240,6 +240,8 @@ class Res:
 
         return qz
 
+
+#для быстрой отрисовки
 initial_cond = [0., 0, 0, 1, 2, 2, 2]  # начальные условия удовлетворяют случай эйлера
 initial_time = 0
 end_time = 40
